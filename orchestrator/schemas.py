@@ -12,6 +12,7 @@ class Finding(BaseModel):
     message: str
 
 class TestResult(BaseModel):
+    __test__ = False  # tells pytest this is not a test class
     passed: bool
     stdout: str = ""
     stderr: str = ""
