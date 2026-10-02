@@ -13,16 +13,20 @@ class RunRequest(BaseModel):
 
 
 async def execute(run_id: str, task: str):
+    events = runs[run_id]["events"]
     try:
-        runs[run_id] = await run_pipeline(task)
+        result = await run_pipeline(task, events)
+        result["events"] = events
+        runs[run_id] = result
     except Exception as e:
-        runs[run_id] = {"status": "error", "error": str(e)}
+        events.append({"agent": "orchestrator", "message": f"Error: {e}"})
+        runs[run_id] = {"status": "error", "error": str(e), "events": events}
 
 
 @app.post("/runs")
 async def start_run(req: RunRequest, background: BackgroundTasks):
     run_id = uuid.uuid4().hex[:8]
-    runs[run_id] = {"status": "running"}
+    runs[run_id] = {"status": "running", "events": []}
     background.add_task(execute, run_id, req.task)
     return {"run_id": run_id}
 
